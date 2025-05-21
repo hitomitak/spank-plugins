@@ -22,13 +22,16 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::thread;
 
 mod models;
 use self::models::{QRMIResource, QRMIResources, ResourceType};
 
 use qrmi::ibm::{IBMDirectAccess, IBMQiskitRuntimeService};
 use qrmi::QuantumResource;
+use crate::proxy::handler::start_reverse_proxy;
 
+pub mod proxy;
 const SLURM_BATCH_SCRIPT: u32 = 0xfffffffb;
 
 // spank_qrmi plugin
@@ -162,9 +165,25 @@ unsafe impl Plugin for SpankQrmi {
             config_map.insert(qrmi.name.clone(), qrmi);
         }
 
-        let mut avail_names: Vec<String> = vec!();
-        let mut avail_types: Vec<String> = vec!();
-        let mut types: Vec<ResourceType> = vec!();
+       let config_path = "/etc/slurm/proxy.json";
+       let proxy_name = "test";
+
+       info!("call proxy server");
+       thread::spawn(move || { 
+        let rt = tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+            rt.block_on(async move {
+                if let Err(e) = start_reverse_proxy(config_path.to_string(), proxy_name.to_string()).await {
+                    eprintln!("proxy error: {:?}", e);
+                }
+            });
+        });
+
+        let mut avail_names: Vec<String> = vec![];
+        let mut avail_types: Vec<String> = vec![];
+        let mut types: Vec<ResourceType> = vec![];
         let mut acquisition_tokens: Vec<String> = Vec::new();
         for qpu_name in qpu_names {
             if let Some(qrmi) = config_map.get(qpu_name) {
@@ -186,7 +205,11 @@ unsafe impl Plugin for SpankQrmi {
                         let mut instance = IBMDirectAccess::new(qpu_name);
                         let acquisition_token = instance.acquire()?;
                         info!("acquisition token = {}", acquisition_token);
-                        spank.setenv(format!("{qpu_name}_QRMI_IBM_DA_SESSION_ID"), &acquisition_token, true)?;
+                        spank.setenv(
+                            format!("{qpu_name}_QRMI_IBM_DA_SESSION_ID"),
+                            &acquisition_token,
+                            true,
+                        )?;
                         avail_names.push(qpu_name.to_string());
                         avail_types.push(qrmi.r#type.as_str().to_string());
                         types.push(qrmi.r#type.clone());
@@ -196,7 +219,11 @@ unsafe impl Plugin for SpankQrmi {
                         let mut instance = IBMQiskitRuntimeService::new(qpu_name);
                         let acquisition_token = instance.acquire()?;
                         info!("acquisition token = {}", acquisition_token);
-                        spank.setenv(format!("{qpu_name}_QRMI_IBM_QRS_SESSION_ID"), &acquisition_token, true)?;
+                        spank.setenv(
+                            format!("{qpu_name}_QRMI_IBM_QRS_SESSION_ID"),
+                            &acquisition_token,
+                            true,
+                        )?;
                         avail_names.push(qpu_name.to_string());
                         avail_types.push(qrmi.r#type.as_str().to_string());
                         types.push(qrmi.r#type.clone());
@@ -264,7 +291,7 @@ unsafe impl Plugin for SpankQrmi {
         enter!();
         dump_context!(spank);
         if let Ok(result) = spank.job_env() {
-            // dump job environment variables for development 
+            // dump job environment variables for development
             info!("{:#?}", result);
         }
         Ok(())

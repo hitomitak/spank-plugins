@@ -1,0 +1,17 @@
+{
+  "proxies": [
+    {
+      "name": "test",
+      "auth_type": "ibmcloud_iam",
+      "bind_host": "0.0.0.0",
+      "bind_port": 4000,
+      "iam_endpoint": "https://iam.test.cloud.ibm.com",
+      "iam_apikey": "DR0TlPQgvFvsHW-LfLjOQCxCxDdmbN-jO-SuKtzBGUaE",
+      "service_crn": "crn:v1:staging:public:quantum-computing:us-east:a/78d9efd23fdb4894837f663626efb044:4fd0e649-98d2-41f6-a2dc-cc58e8422bc3::",
+      "paths": [
+        "/{*path}"
+      ],
+      "proxy_pass": "http://localhost:8080"
+    }
+  ]
+}
