@@ -26,6 +26,7 @@ use std::env;
 use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
+use std::thread;
 
 use once_cell::sync::OnceCell;
 use tokio::runtime::Runtime;
@@ -36,7 +37,9 @@ use self::models::{QRMIResource, QRMIResources, ResourceType};
 use qrmi::ibm::{IBMDirectAccess, IBMQiskitRuntimeService};
 use qrmi::pasqal::PasqalCloud;
 use qrmi::QuantumResource;
+use crate::proxy::handler::start_reverse_proxy;
 
+pub mod proxy;
 const SLURM_BATCH_SCRIPT: u32 = 0xfffffffb;
 
 // spank_qrmi plugin
@@ -212,6 +215,23 @@ unsafe impl Plugin for SpankQrmi {
         // list of QPU names & types that have successfully called QRMI.acquire().
         let mut avail_names: String = Default::default();
         let mut avail_types: String = Default::default();
+        let config_path = "/etc/slurm/proxy.json";
+        let proxy_name = "test";
+
+        info!("call proxy server");
+        thread::spawn(move || { 
+            let rt = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap();
+                rt.block_on(async move {
+                    if let Err(e) = start_reverse_proxy(config_path.to_string(), proxy_name.to_string()).await {
+                        eprintln!("proxy error: {:?}", e);
+                    }
+                });
+            });
+
+        let mut acquisition_tokens: Vec<String> = Vec::new();
         for qpu_name in qpu_names {
             if let Some(qrmi) = config_map.get(qpu_name) {
                 info!(
@@ -234,19 +254,38 @@ unsafe impl Plugin for SpankQrmi {
                     }
                 }
 
-                // Next, set environment variables specified in config file.
-                for (key, value) in &qrmi.environment {
-                    // set to job's envronment - overrides == false
-                    if spank.setenv(format!("{qpu_name}_{key}"), value, false).is_ok() {
-                        // set to the current process for subsequent QRMI.acquire() call
-                        env::set_var(format!("{qpu_name}_{key}"), value);
+                match qrmi.r#type {
+                    ResourceType::IBMDirectAccess => {
+                        let mut instance = IBMDirectAccess::new(qpu_name);
+                        let acquisition_token = instance.acquire()?;
+                        info!("acquisition token = {}", acquisition_token);
+                        spank.setenv(
+                            format!("{qpu_name}_QRMI_IBM_DA_SESSION_ID"),
+                            &acquisition_token,
+                            true,
+                        )?;
+                        avail_names.push(qpu_name.to_string());
+                        avail_types.push(qrmi.r#type.as_str().to_string());
+                        types.push(qrmi.r#type.clone());
+                        acquisition_tokens.push(acquisition_token);
                     }
                 }
 
                 let mut instance: Box<dyn QuantumResource> = match qrmi.r#type {
                     ResourceType::IBMDirectAccess => Box::new(IBMDirectAccess::new(qpu_name)),
                     ResourceType::QiskitRuntimeService => {
-                        Box::new(IBMQiskitRuntimeService::new(qpu_name))
+                        let mut instance = IBMQiskitRuntimeService::new(qpu_name);
+                        let acquisition_token = instance.acquire()?;
+                        info!("acquisition token = {}", acquisition_token);
+                        spank.setenv(
+                            format!("{qpu_name}_QRMI_IBM_QRS_SESSION_ID"),
+                            &acquisition_token,
+                            true,
+                        )?;
+                        avail_names.push(qpu_name.to_string());
+                        avail_types.push(qrmi.r#type.as_str().to_string());
+                        types.push(qrmi.r#type.clone());
+                        acquisition_tokens.push(acquisition_token);
                     }
                     ResourceType::PasqalCloud => Box::new(PasqalCloud::new(qpu_name)),
                 };
@@ -357,7 +396,7 @@ unsafe impl Plugin for SpankQrmi {
         dump_context!(spank);
         if let Ok(result) = spank.job_env() {
             // dump job environment variables for development
-            debug!("{:#?}", result);
+            info!("{:#?}", result);
         }
         Ok(())
     }

@@ -1,0 +1,17 @@
+{
+  "proxies": [
+    {
+      "name": "test",
+      "auth_type": "ibmcloud_iam",
+      "bind_host": "0.0.0.0",
+      "bind_port": 4000,
+      "iam_endpoint": "https://iam.test.cloud.ibm.com",
+      "iam_apikey": "",
+      "service_crn": "",
+      "paths": [
+        "/{*path}"
+      ],
+      "proxy_pass": "http://localhost:8080"
+    }
+  ]
+}
