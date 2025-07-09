@@ -37,5 +37,11 @@ repository = "https://github.com/qiskit-community/spank-plugins"
 python-source = "python"
 module-name   = "qrmi._core" 
 features = ["pyo3/extension-module", "pyo3/abi3", "qrmi/pyo3"]
-python-packages = ["qrmi", "qiskit_qrmi_primitives", "pulser_qrmi_backend"]
+python-packages = [
+    "qrmi",
+    "qrmi.pulser_backend",
+    "qrmi.qiskit_primitives",
+    "qrmi.qiskit_primitives.ibm",
+    "qrmi.qiskit_primitives.pasqal",
+]
 
