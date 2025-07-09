@@ -51,3 +51,7 @@ rust-version = "1.85.1" # Keep in sync with docs/client/*.md and rust-toolchain.
 [workspace.dependencies]
 direct-access-api = { path = "dependencies/direct_access_client" }
 pasqal-cloud-api = { path = "dependencies/pasqal_cloud_client" }
+
+[package.metadata.maturin]
+python-source = "python"
+module-name   = "qrmi._core"

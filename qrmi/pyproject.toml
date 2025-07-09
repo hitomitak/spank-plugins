@@ -34,4 +34,8 @@ keywords = [
 repository = "https://github.com/qiskit-community/spank-plugins"
 
 [tool.maturin]
+python-source = "python"
+module-name   = "qrmi._core" 
 features = ["pyo3/extension-module", "pyo3/abi3", "qrmi/pyo3"]
+python-packages = ["qrmi", "qiskit_qrmi_primitives", "pulser_qrmi_backend"]
+
