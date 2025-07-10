@@ -21,10 +21,10 @@ import pulser
 import pulser.abstract_repr
 from dotenv import load_dotenv
 from pulser.devices import Device
-from pulser_qrmi_backend.service import QRMIService
+from qiskit_qrmi.pulser_qrmi_backend.service import QRMIService
 from qiskit.transpiler.target import Target
 
-from qrmi import QuantumResource
+from qiskit_qrmi import QuantumResource
 
 
 def get_device(qrmi: QuantumResource) -> Device:

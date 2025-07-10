@@ -15,10 +15,10 @@ import json
 import random
 
 from dotenv import load_dotenv
-from pulser_qrmi_backend.service import QRMIService
+from qiskit_qrmi.pulser_qrmi_backend.service import QRMIService
 from qiskit.circuit import QuantumCircuit
 from qiskit_pasqal_provider.providers.gate import HamiltonianGate, InterpolatePoints
-from qiskit_qrmi_primitives.pasqal.sampler import QPPSamplerV2
+from qiskit_qrmi.qiskit_qrmi_primitives.pasqal.sampler import QPPSamplerV2
 
 # Create QRMI
 load_dotenv()

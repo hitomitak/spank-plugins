@@ -3,7 +3,7 @@ requires = ["maturin>=1.8,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "qrmi"
+name = "qiskit-qrmi"
 authors = [
   {email = "qiskit@us.ibm.com"},
   {name = "IBM, Pasqal SAS and UKRI-STFC (Hartree Centre)"}
@@ -50,13 +50,13 @@ Changelog = "https://github.com/qiskit/qrmi/blob/master/CHANGELOG.md"
 
 [tool.maturin]
 python-source = "python"
-module-name   = "qrmi._core" 
+module-name   = "qiskit_qrmi._core" 
 features = ["pyo3/extension-module", "pyo3/abi3", "qrmi/pyo3"]
 python-packages = [
-    "qrmi",
-    "qrmi.pulser_backend",
-    "qrmi.qiskit_primitives",
-    "qrmi.qiskit_primitives.ibm",
-    "qrmi.qiskit_primitives.pasqal",
+    "qiskit_qrmi",
+    "qiskit_qrmi.pulser_backend",
+    "qiskit_qrmi.qiskit_primitives",
+    "qiskit_qrmi.qiskit_primitives.ibm",
+    "qiskit_qrmi.qiskit_primitives.pasqal",
 ]
 

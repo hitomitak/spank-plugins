@@ -19,7 +19,7 @@ import time
 import json
 import argparse
 from dotenv import load_dotenv
-from qrmi import QuantumResource, ResourceType, Payload, TaskStatus
+from qiskit_qrmi import QuantumResource, ResourceType, Payload, TaskStatus
 
 parser = argparse.ArgumentParser(description="An example of IBM Direct Access QRMI")
 parser.add_argument("backend", help="backend name")

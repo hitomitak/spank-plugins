@@ -19,7 +19,7 @@ from qiskit import qasm3
 from qiskit.primitives.base import BaseSamplerV2
 from qiskit.primitives.containers.sampler_pub import SamplerPub, SamplerPubLike
 
-from qrmi import QuantumResource, Payload
+from qiskit_qrmi import QuantumResource, Payload
 
 from .runtime_job_v2 import RuntimeJobV2
 

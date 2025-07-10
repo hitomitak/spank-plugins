@@ -16,7 +16,7 @@ import os
 from logging import getLogger
 from typing import List
 
-from qrmi import QuantumResource, ResourceType
+from qiskit_qrmi import QuantumResource, ResourceType
 
 logger = getLogger("qrmi")
 

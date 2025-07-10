@@ -54,4 +54,4 @@ pasqal-cloud-api = { path = "dependencies/pasqal_cloud_client" }
 
 [package.metadata.maturin]
 python-source = "python"
-module-name   = "qrmi._core"
+module-name   = "qiskit_qrmi._core"

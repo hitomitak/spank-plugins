@@ -50,13 +50,13 @@ source ~/py312_qrmi_venv/bin/activate
 maturin develop --release
 ```
 
-Once you successfully build and install, `qrmi` package is ready to use.
+Once you successfully build and install, `qiskit-qrmi` package is ready to use.
 ```shell-session
 $ pip list
-qrmi                   0.5.1       /Users/devuser/git/spank-plugins/qrmi
+qiskit-qrmi                   0.5.1       /Users/devuser/git/spank-plugins/qrmi
 
-$ pip show qrmi
-Name: qrmi
+$ pip show qiskit-qrmi
+Name: qiskit-qrmi
 Version: 0.5.1
 Summary: Quantum Resource Management Interface(QRMI)
 Home-page: 
@@ -96,7 +96,7 @@ Wheel is created under `./target/wheels` directory. You can distribute and insta
 
 ```shell-session
 source ~/py312_qrmi_venv/bin/activate
-pip install /shared/spank-plugins/qrmi/target/wheels/qrmi-0.5.1-cp312-abi3-manylinux_2_34_aarch64.whl
+pip install /shared/spank-plugins/qrmi/target/wheels/qiskit_qrmi-0.5.1-cp312-abi3-manylinux_2_34_aarch64.whl
 ```
 
 ## Examples
