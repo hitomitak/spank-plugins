@@ -16,17 +16,12 @@ use crate::pasqal::PasqalCloud;
 use crate::QuantumResource;
 use pyo3::prelude::*;
 use pyo3_stub_gen::{
-    define_stub_info_gatherer, derive::gen_stub_pyclass, derive::gen_stub_pyclass_enum,
-    derive::gen_stub_pymethods,
+    define_stub_info_gatherer,
+    derive::gen_stub_pyclass,
+    derive::gen_stub_pyclass_enum,
+    //    derive::gen_stub_pymethods,
 };
 use tokio::runtime::Runtime;
-
-use pyo3_stub_gen::define_stub_type;
-
-define_stub_type!(Payload, "qrmi.types", "Payload");
-define_stub_type!(TaskStatus, "qrmi.types", "TaskStatus");
-define_stub_type!(TaskResult, "qrmi.types", "TaskResult");
-define_stub_type!(Target, "qrmi.types", "Target");
 
 #[gen_stub_pyclass_enum]
 #[pyclass(eq, eq_int, hash, frozen)]
@@ -45,7 +40,7 @@ pub struct PyQuantumResource {
     rt: Runtime,
 }
 
-#[gen_stub_pymethods]
+//#[gen_stub_pymethods]
 #[pymethods]
 impl PyQuantumResource {
     #[new]
