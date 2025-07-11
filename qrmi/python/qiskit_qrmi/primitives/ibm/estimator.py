@@ -13,7 +13,7 @@
 """EstimatorV2 Primitive implementation with IBM QRMI"""
 from typing import Union
 from qiskit_qrmi import QuantumResource
-from qiskit_qrmi.qiskit_qrmi_primitives import QRMIBaseEstimatorV2
+from qiskit_qrmi.primitives import QRMIBaseEstimatorV2
 
 
 class EstimatorV2(QRMIBaseEstimatorV2):
