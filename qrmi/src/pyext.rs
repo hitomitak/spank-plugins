@@ -15,8 +15,20 @@ use crate::models::{Payload, Target, TaskResult, TaskStatus};
 use crate::pasqal::PasqalCloud;
 use crate::QuantumResource;
 use pyo3::prelude::*;
+use pyo3_stub_gen::{
+    define_stub_info_gatherer, derive::gen_stub_pyclass, derive::gen_stub_pyclass_enum,
+    derive::gen_stub_pymethods,
+};
 use tokio::runtime::Runtime;
 
+use pyo3_stub_gen::define_stub_type;
+
+define_stub_type!(Payload, "qrmi.types", "Payload");
+define_stub_type!(TaskStatus, "qrmi.types", "TaskStatus");
+define_stub_type!(TaskResult, "qrmi.types", "TaskResult");
+define_stub_type!(Target, "qrmi.types", "Target");
+
+#[gen_stub_pyclass_enum]
 #[pyclass(eq, eq_int, hash, frozen)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ResourceType {
@@ -25,12 +37,15 @@ pub enum ResourceType {
     PasqalCloud,
 }
 
+#[gen_stub_pyclass]
 #[pyclass]
 #[pyo3(name = "QuantumResource")]
 pub struct PyQuantumResource {
     qrmi: Box<dyn QuantumResource + Send + Sync>,
     rt: Runtime,
 }
+
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyQuantumResource {
     #[new]
@@ -135,3 +150,5 @@ fn qrmi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<crate::models::TaskResult>()?;
     Ok(())
 }
+
+define_stub_info_gatherer!(stub_info);
