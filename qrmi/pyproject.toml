@@ -54,14 +54,13 @@ module-name   = "qiskit_qrmi._core"
 features = ["pyo3/extension-module", "pyo3/abi3", "qrmi/pyo3"]
 python-packages = [
     "qiskit_qrmi",
-    "qiskit_qrmi.pulser_qrmi_backend",
-    "qiskit_qrmi.qiskit_qrmi_primitives",
-    "qiskit_qrmi.qiskit_qrmi_primitives.ibm",
-    "qiskit_qrmi.qiskit_qrmi_primitives.pasqal",
+    "qiskit_qrmi.pulser_backend",
+    "qiskit_qrmi.primitives",
+    "qiskit_qrmi.primitives.ibm",
+    "qiskit_qrmi.primitives.pasqal",
 ]
-
 include = [
   "python/qiskit_qrmi/py.typed",
-  "python/qiskit_qrmi/*.pyi",           # ← _core.pyi を拾う
+  "python/qiskit_qrmi/*.pyi",      
 ]
 

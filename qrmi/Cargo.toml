@@ -35,6 +35,7 @@ pyo3 = { version = "0.25.0", features = ["anyhow"] }
 ffi_helpers = "0.3.0"
 async-trait = "0.1.88"
 pyo3-stub-gen = { git = "https://github.com/Jij-Inc/pyo3-stub-gen.git", branch = "main"}
+dotenv = "0.15.0"
 
 
 [build-dependencies]
@@ -45,6 +46,7 @@ members = [
     "dependencies/direct_access_client",
     "dependencies/qiskit_runtime_client",
     "dependencies/pasqal_cloud_client",
+    "bin/task_runner",
 ]
 resolver = "2"
 
@@ -61,3 +63,15 @@ pasqal-cloud-api = { path = "dependencies/pasqal_cloud_client" }
 [package.metadata.maturin]
 python-source = "python"
 module-name   = "qiskit_qrmi._core"
+
+[[example]]
+name = "qrmi-example-qiskit-runtime-service"
+path = "examples/qrmi/rust/qiskit_runtime_service/src/main.rs"
+
+[[example]]
+name = "qrmi-example-direct-access"
+path = "examples/qrmi/rust/direct_access/src/main.rs"
+
+[[example]]
+name = "qrmi-example-pasqal-cloud"
+path = "examples/qrmi/rust/pasqal_cloud/src/main.rs"
