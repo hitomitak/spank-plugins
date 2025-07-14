@@ -55,8 +55,8 @@ features = ["pyo3/extension-module", "pyo3/abi3", "qrmi/pyo3"]
 python-packages = [
     "qiskit_qrmi",
     "qiskit_qrmi.pulser_backend",
-    "qiskit_qrmi.qiskit_primitives",
-    "qiskit_qrmi.qiskit_primitives.ibm",
-    "qiskit_qrmi.qiskit_primitives.pasqal",
+    "qiskit_qrmi.primitives",
+    "qiskit_qrmi.primitives.ibm",
+    "qiskit_qrmi.primitives.pasqal",
 ]
 
