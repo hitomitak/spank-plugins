@@ -201,4 +201,3 @@ pub trait QuantumResource: Send + Sync {
     /// ```
     async fn metadata(&mut self) -> std::collections::HashMap<String, String>;
 }
-

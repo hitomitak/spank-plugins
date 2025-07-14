@@ -59,4 +59,8 @@ python-packages = [
     "qiskit_qrmi.primitives.ibm",
     "qiskit_qrmi.primitives.pasqal",
 ]
+include = [
+  "python/qiskit_qrmi/py.typed",
+  "python/qiskit_qrmi/*.pyi",      
+]
 
