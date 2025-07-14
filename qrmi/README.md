@@ -99,6 +99,13 @@ source ~/py312_qrmi_venv/bin/activate
 pip install /shared/spank-plugins/qrmi/target/wheels/qiskit_qrmi-0.5.2-cp312-abi3-manylinux_2_34_aarch64.whl
 ```
 
+## How to build task_runner
+```shell-session
+. ~/.cargo/env
+cargo build -p task_runner 
+```
+
+
 ## Examples
 
 * [Examples in Rust](./examples/rust)
