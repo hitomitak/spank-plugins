@@ -12,6 +12,7 @@ crate-type = ["staticlib", "rlib", "cdylib"]
 [[bin]]
 name = "stubgen"
 path = "src/bin/stubgen.rs"
+required-features = ["pyo3"] 
 
 [features]
 default = []
