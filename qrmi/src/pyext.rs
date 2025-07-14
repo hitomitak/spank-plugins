@@ -15,16 +15,11 @@ use crate::models::{Payload, Target, TaskResult, TaskStatus};
 use crate::pasqal::PasqalCloud;
 use crate::QuantumResource;
 use pyo3::prelude::*;
-use pyo3_stub_gen::{
-    define_stub_info_gatherer,
-    derive::gen_stub_pyclass,
-    derive::gen_stub_pyclass_enum,
-    //    derive::gen_stub_pymethods,
-};
+use pyo3_stub_gen::{define_stub_info_gatherer, derive::*};
 use tokio::runtime::Runtime;
 
-#[gen_stub_pyclass_enum]
 #[pyclass(eq, eq_int, hash, frozen)]
+#[gen_stub_pyclass_enum]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ResourceType {
     IBMDirectAccess,
@@ -40,7 +35,7 @@ pub struct PyQuantumResource {
     rt: Runtime,
 }
 
-//#[gen_stub_pymethods]
+#[gen_stub_pymethods]
 #[pymethods]
 impl PyQuantumResource {
     #[new]
