@@ -41,10 +41,10 @@ cargo build --release
 ## How to run
 
 ```shell-session
-$ ./target/release/qrmi_task_runner --help
-qrmi_task_runner - Command to run a QRMI task
+$ ../../target/release/task_runner --help
+task_runner - Command to run a QRMI task
 
-Usage: qrmi_task_runner [OPTIONS] <name> <file>
+Usage: task_runner [OPTIONS] <name> <file>
 
 Arguments:
   <name>  QPU resource name
@@ -101,7 +101,7 @@ Run estimator primitive on ibm_marrakesh.
 #SBATCH --cpus-per-task=1
 #SBATCH --qpu=ibm_torino,ibm_marrakesh
 
-srun /shared/spank-plugins/qrmi/bin/task_runner/target/release/qrmi_task_runner ibm_marrakesh /shared/input/estimator_input.json
+srun /shared/spank-plugins/qrmi/target/release/task_runner ibm_marrakesh /shared/input/estimator_input.json
 ```
 
 
@@ -118,7 +118,7 @@ This sequence can also be generated via the Qiskit Pasqal Provider, as shown in 
 #SBATCH --cpus-per-task=1
 #SBATCH --qpu=FRESNEL
 
-srun ./target/release/qrmi_task_runner FRESNEL /shared/input/sequence_input_FRESNEL.json
+srun ../../target/release/task_runner FRESNEL /shared/input/sequence_input_FRESNEL.json
 ```
 
 ### Run locally for your testing 

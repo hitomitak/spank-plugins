@@ -114,9 +114,9 @@ cargo run --bin stubgen --features=pyo3
 
 ## Examples
 
-* [Examples in Rust](./examples/rust)
-* [Examples in Python](./examples/python)
-* [Examples in C](./examples/c)
+* [Examples in Rust](./examples/qrmi/rust)
+* [Examples in Python](./examples/qrmi/python)
+* [Examples in C](./examples/qrmi/c)
 
 ## How to generate Rust API document
 

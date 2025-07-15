@@ -40,7 +40,7 @@ Users can generate API document from source.
 . ~/.cargo/env
 cargo doc --no-deps --open
 ```
-API document will be created under `../target/doc/pasqal_cloud_api` directory. 
+API document will be created under `../../target/doc/pasqal_cloud_api` directory. 
 
 
 ## Logging
@@ -104,4 +104,4 @@ Contributor can generate API document from source.
 $ . ~/.cargo/env
 $ cargo doc --no-deps
 ```
-API document will be created under `../target/doc/pasqal_cloud_api` directory.
+API document will be created under `../../target/doc/pasqal_cloud_api` directory.

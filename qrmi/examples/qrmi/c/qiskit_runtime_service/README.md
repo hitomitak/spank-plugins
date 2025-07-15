@@ -3,7 +3,7 @@
 ## Prerequisites
 
 * C compiler/linker, cmake and make
-* [QRMI Rust library](../../../README.md)
+* [QRMI Rust library](../../../../README.md)
 
 ## Set environment variables
 
