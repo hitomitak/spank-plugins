@@ -106,6 +106,12 @@ cargo build -p task_runner
 ```
 
 
+## How to generate stub file for python code
+```shell-session
+. ~/.cargo/env
+cargo run --bin stubgen --features=pyo3
+```
+
 ## Examples
 
 * [Examples in Rust](./examples/rust)
