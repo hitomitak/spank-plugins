@@ -74,6 +74,7 @@ pub async fn start_reverse_proxy(config_path: String, proxy_name: String) -> Res
 
     info!("proxy : token url {}", token_url);
     let dest_url = Url::parse(&proxy_config.proxy_pass).unwrap();
+    info!("proxy : dst url {}", dest_url);
     let port: u16 = if dest_url.scheme() == "https" {
         dest_url.port_or_known_default().unwrap_or(443)
     } else {
@@ -149,6 +150,7 @@ async fn handler(
         HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
     );
 
+    info!("proxy : Request client");
     match state.client.request(req).await {
         Ok(v) => Ok(v.into_response()),
         Err(err) => {

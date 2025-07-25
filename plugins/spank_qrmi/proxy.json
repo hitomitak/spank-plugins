@@ -11,7 +11,7 @@
       "paths": [
         "/{*path}"
       ],
-      "proxy_pass": "http://localhost:8080"
+      "proxy_pass": "http://192.168.0.22:8080"
     }
   ]
 }

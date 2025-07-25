@@ -231,7 +231,6 @@ unsafe impl Plugin for SpankQrmi {
                 });
             });
 
-        let mut acquisition_tokens: Vec<String> = Vec::new();
         for qpu_name in qpu_names {
             if let Some(qrmi) = config_map.get(qpu_name) {
                 info!(
@@ -254,38 +253,19 @@ unsafe impl Plugin for SpankQrmi {
                     }
                 }
 
-                match qrmi.r#type {
-                    ResourceType::IBMDirectAccess => {
-                        let mut instance = IBMDirectAccess::new(qpu_name);
-                        let acquisition_token = instance.acquire()?;
-                        info!("acquisition token = {}", acquisition_token);
-                        spank.setenv(
-                            format!("{qpu_name}_QRMI_IBM_DA_SESSION_ID"),
-                            &acquisition_token,
-                            true,
-                        )?;
-                        avail_names.push(qpu_name.to_string());
-                        avail_types.push(qrmi.r#type.as_str().to_string());
-                        types.push(qrmi.r#type.clone());
-                        acquisition_tokens.push(acquisition_token);
+                // Next, set environment variables specified in config file.
+                for (key, value) in &qrmi.environment {
+                    // set to job's envronment - overrides == false
+                    if spank.setenv(format!("{qpu_name}_{key}"), value, false).is_ok() {
+                        // set to the current process for subsequent QRMI.acquire() call
+                        env::set_var(format!("{qpu_name}_{key}"), value);
                     }
                 }
 
                 let mut instance: Box<dyn QuantumResource> = match qrmi.r#type {
                     ResourceType::IBMDirectAccess => Box::new(IBMDirectAccess::new(qpu_name)),
                     ResourceType::QiskitRuntimeService => {
-                        let mut instance = IBMQiskitRuntimeService::new(qpu_name);
-                        let acquisition_token = instance.acquire()?;
-                        info!("acquisition token = {}", acquisition_token);
-                        spank.setenv(
-                            format!("{qpu_name}_QRMI_IBM_QRS_SESSION_ID"),
-                            &acquisition_token,
-                            true,
-                        )?;
-                        avail_names.push(qpu_name.to_string());
-                        avail_types.push(qrmi.r#type.as_str().to_string());
-                        types.push(qrmi.r#type.clone());
-                        acquisition_tokens.push(acquisition_token);
+                        Box::new(IBMQiskitRuntimeService::new(qpu_name))
                     }
                     ResourceType::PasqalCloud => Box::new(PasqalCloud::new(qpu_name)),
                 };

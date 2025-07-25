@@ -67,12 +67,13 @@ impl TokenManager {
     }
     /// Fetches access token from IAM and updates self.access_token property.
     async fn fetch_token(&mut self) -> Result<()> {
-        log::debug!("fetch access token from IAM");
+        log::debug!("proxy: fetch access token from IAM");
         let params = [
             ("grant_type", "urn:ibm:params:oauth:grant-type:apikey"),
             ("apikey", &self.apikey),
             ("response_type", "cloud_iam"),
         ];
+        log::debug!("proxy: token_url {}", self.token_url);
         let response = self
             .client
             .post(&self.token_url)
@@ -85,14 +86,18 @@ impl TokenManager {
             .send()
             .await?;
         if response.status().is_success() {
+            log::debug!("proxy: response success");
             let token_response: GetAccessTokenResponse = response.json().await?;
             self.access_token = Some(token_response.access_token);
+            log::debug!("proxy: get access_token {:?}", self.access_token);
             self.token_expiry = Some(
                 Instant::now()
                     + Duration::from_secs((token_response.expires_in as f64 * 0.9) as u64),
             );
         } else {
+            log::debug!("proxy: response error");
             let error_response = response.json::<IAMErrorResponse>().await?;
+            log::debug!("proxy: error response {:?}", error_response);
             if let Some(details) = error_response.details {
                 bail!(format!("{} ({})", details, error_response.code));
             } else {
@@ -102,6 +107,7 @@ impl TokenManager {
                 ));
             }
         }
+        log::debug!("proxy: return ok");
         Ok(())
     }
     /// Checks token validity and fetches if expired.
