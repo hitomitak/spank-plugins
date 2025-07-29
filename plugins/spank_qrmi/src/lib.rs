@@ -37,10 +37,15 @@ use self::models::{QRMIResource, QRMIResources, ResourceType};
 use qrmi::ibm::{IBMDirectAccess, IBMQiskitRuntimeService};
 use qrmi::pasqal::PasqalCloud;
 use qrmi::QuantumResource;
-use crate::proxy::handler::start_reverse_proxy;
+use crate::proxy::handler::{start_reverse_proxy, ProxyRuntimeConfig};
 
 pub mod proxy;
 const SLURM_BATCH_SCRIPT: u32 = 0xfffffffb;
+
+const DENY_KEYS: &[&str] = &[
+    "QRMI_IBM_DA_IAM_APIKEY",
+    "QRMI_IBM_DA_SERVICE_CRN",
+];
 
 // spank_qrmi plugin
 //
@@ -180,7 +185,7 @@ unsafe impl Plugin for SpankQrmi {
         spank.setenv("SLURM_JOB_QPU_TYPES", "", true)?;
 
         // converts comma separated string to string array
-        let qpu_names: Vec<&str> = binding.split(",").map(|l| l.trim()).collect();
+        let qpu_names: Vec<String> = binding.split(',').map(|l| l.trim().to_owned()).filter(|s| !s.is_empty()).collect();
         info!("qpu names = {:#?}", qpu_names);
 
         // tries to open qrmi_config.json
@@ -215,29 +220,30 @@ unsafe impl Plugin for SpankQrmi {
         // list of QPU names & types that have successfully called QRMI.acquire().
         let mut avail_names: String = Default::default();
         let mut avail_types: String = Default::default();
-        let config_path = "/etc/slurm/proxy.json";
-        let proxy_name = "test";
 
-        info!("call proxy server");
-        thread::spawn(move || { 
-            let rt = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .unwrap();
-                rt.block_on(async move {
-                    if let Err(e) = start_reverse_proxy(config_path.to_string(), proxy_name.to_string()).await {
-                        eprintln!("proxy error: {:?}", e);
-                    }
-                });
-            });
-
-        for qpu_name in qpu_names {
-            if let Some(qrmi) = config_map.get(qpu_name) {
+        for qpu_name in &qpu_names {
+            if let Some(qrmi) = config_map.get(qpu_name.as_str()) {
                 info!(
                     "qpu = {}, type = {:#?} env = {:#?}",
                     qpu_name, qrmi.r#type, qrmi.environment
                 );
 
+                if let Some(cfg) = build_proxy_runtime_config(qrmi, qpu_name.as_str()) {
+                    let cfg_clone = cfg.clone();
+                    let qpu_name_clone = qpu_name.clone(); 
+                    info!("call proxy server [{}]", qpu_name_clone);
+                    thread::spawn(move || {
+                        let rt = tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap();
+                                rt.block_on(async move {
+                                    if let Err(e) = start_reverse_proxy(cfg_clone).await {
+                                        eprintln!("proxy[{}] error: {:?}", qpu_name_clone, e);
+                                    }
+                                });
+                        });
+                }
                 // If user specifies access details in environment variables,
                 // these are available as job environment variables. Reads through them and
                 // set user-specified {qpu_name}_QRMI_xxx env vars to this slurm daemon process
@@ -256,6 +262,7 @@ unsafe impl Plugin for SpankQrmi {
                 // Next, set environment variables specified in config file.
                 for (key, value) in &qrmi.environment {
                     // set to job's envronment - overrides == false
+                    if DENY_KEYS.iter().any(|k| key == *k) { continue; }
                     if spank.setenv(format!("{qpu_name}_{key}"), value, false).is_ok() {
                         // set to the current process for subsequent QRMI.acquire() call
                         env::set_var(format!("{qpu_name}_{key}"), value);
@@ -380,4 +387,50 @@ unsafe impl Plugin for SpankQrmi {
         }
         Ok(())
     }
+}
+
+fn build_proxy_runtime_config(qrmi: &QRMIResource, name: &str) -> Option<ProxyRuntimeConfig> {
+    let env = &qrmi.environment;
+
+    let enabled = env
+        .get("QRMI_REVERSE_PROXY_ENABLE")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(true);
+    if !enabled {
+        return None;
+    }
+
+    let upstream    = env.get("QRMI_REVERSE_PROXY_PASS")?;
+    let iam_ep      = env.get("QRMI_IBM_DA_IAM_ENDPOINT")?;
+    let iam_key     = env.get("QRMI_IBM_DA_IAM_APIKEY")?;
+    let service_crn = env.get("QRMI_IBM_DA_SERVICE_CRN")?;
+
+    let bind_host = env
+        .get("QRMI_REVERSE_PROXY_BIND_HOST")
+        .cloned()
+        .unwrap_or_else(|| "127.0.0.1".to_string());
+
+    let bind_port: u16 = env
+        .get("QRMI_REVERSE_PROXY_BIND_PORT")
+        .and_then(|s| s.trim().parse::<u16>().ok())?;
+
+    let paths: Vec<String> = env
+        .get("QRMI_REVERSE_PROXY_PATHS")
+        .map(|csv| {
+            csv.split(',')
+               .map(|s| s.trim().to_string())
+               .filter(|s| !s.is_empty())
+               .collect()
+        })
+        .unwrap_or_else(|| vec!["/*path".to_string()]);
+
+    Some(ProxyRuntimeConfig {
+        bind_host,
+        bind_port,
+        proxy_pass: upstream.clone(),
+        iam_endpoint: iam_ep.clone(),
+        iam_apikey: iam_key.clone(),
+        service_crn: service_crn.clone(),
+        paths,
+    })
 }
