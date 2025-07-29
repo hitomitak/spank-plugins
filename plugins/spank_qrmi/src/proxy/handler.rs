@@ -30,6 +30,7 @@ use hyper_tls::HttpsConnector;
 use url::Url;
 
 use crate::proxy::auth::TokenManager;
+use crate::proxy::models::proxy_runtime_config::ProxyRuntimeConfig;
 type Client = hyper_util::client::legacy::Client<HttpsConnector<HttpConnector>, Body>;
 use tracing::info;
 
@@ -40,17 +41,6 @@ pub(crate) struct ProxyState {
     pub(crate) proxy_pass: String,
     pub(crate) service_crn: String,
     pub(crate) host: String,
-}
-
-#[derive(Clone, Debug)]
-pub struct ProxyRuntimeConfig {
-    pub bind_host: String,     
-    pub bind_port: u16,        
-    pub proxy_pass: String,    
-    pub iam_endpoint: String,  
-    pub iam_apikey: String,    
-    pub service_crn: String,   
-    pub paths: Vec<String>,   
 }
 
 pub async fn start_reverse_proxy(cfg: ProxyRuntimeConfig) -> Result<(), Box<dyn std::error::Error>> {

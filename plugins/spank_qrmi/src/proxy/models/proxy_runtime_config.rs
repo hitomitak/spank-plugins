@@ -10,6 +10,13 @@
 // copyright notice, and modified files need to carry a notice indicating
 // that they have been altered from the originals.
 
-//! Dataclasses(Models) used in this reverse proxy.
-
-pub(crate) mod proxy_runtime_config;
+#[derive(Clone, Debug)]
+pub struct ProxyRuntimeConfig {
+    pub bind_host: String,
+    pub bind_port: u16,
+    pub proxy_pass: String,
+    pub iam_endpoint: String,
+    pub iam_apikey: String,
+    pub service_crn: String,
+    pub paths: Vec<String>,
+}

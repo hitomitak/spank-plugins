@@ -34,7 +34,8 @@ use tokio::runtime::Runtime;
 mod models;
 use self::models::{QRMIResource, QRMIResources, ResourceType};
 
-use crate::proxy::handler::{start_reverse_proxy, ProxyRuntimeConfig};
+use crate::proxy::handler::start_reverse_proxy;
+use crate::proxy::models::proxy_runtime_config::ProxyRuntimeConfig;
 use qrmi::ibm::{IBMDirectAccess, IBMQiskitRuntimeService};
 use qrmi::pasqal::PasqalCloud;
 use qrmi::QuantumResource;
