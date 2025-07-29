@@ -28,6 +28,7 @@ struct IAMErrorResponse {
     pub details: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 struct GetAccessTokenResponse {
     // The IAM access token that can be used to invoke Direct Access API. Use this token with the prefix Bearer in the HTTP header Authorization for invocations of Direct Access API.

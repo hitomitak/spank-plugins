@@ -34,18 +34,15 @@ use tokio::runtime::Runtime;
 mod models;
 use self::models::{QRMIResource, QRMIResources, ResourceType};
 
+use crate::proxy::handler::{start_reverse_proxy, ProxyRuntimeConfig};
 use qrmi::ibm::{IBMDirectAccess, IBMQiskitRuntimeService};
 use qrmi::pasqal::PasqalCloud;
 use qrmi::QuantumResource;
-use crate::proxy::handler::{start_reverse_proxy, ProxyRuntimeConfig};
 
 pub mod proxy;
 const SLURM_BATCH_SCRIPT: u32 = 0xfffffffb;
 
-const DENY_KEYS: &[&str] = &[
-    "QRMI_IBM_DA_IAM_APIKEY",
-    "QRMI_IBM_DA_SERVICE_CRN",
-];
+const DENY_KEYS: &[&str] = &["QRMI_IBM_DA_IAM_APIKEY", "QRMI_IBM_DA_SERVICE_CRN"];
 
 // spank_qrmi plugin
 //
@@ -185,7 +182,11 @@ unsafe impl Plugin for SpankQrmi {
         spank.setenv("SLURM_JOB_QPU_TYPES", "", true)?;
 
         // converts comma separated string to string array
-        let qpu_names: Vec<String> = binding.split(',').map(|l| l.trim().to_owned()).filter(|s| !s.is_empty()).collect();
+        let qpu_names: Vec<String> = binding
+            .split(',')
+            .map(|l| l.trim().to_owned())
+            .filter(|s| !s.is_empty())
+            .collect();
         info!("qpu names = {:#?}", qpu_names);
 
         // tries to open qrmi_config.json
@@ -228,20 +229,22 @@ unsafe impl Plugin for SpankQrmi {
                     qpu_name, qrmi.r#type, qrmi.environment
                 );
 
-                if let Some(cfg) = build_proxy_runtime_config(qrmi, qpu_name.as_str()) {
+                let proxy_cfg_opt = build_proxy_runtime_config(qrmi);
+
+                if let Some(cfg) = proxy_cfg_opt.clone() {
                     let cfg_clone = cfg.clone();
-                    let qpu_name_clone = qpu_name.clone(); 
+                    let qpu_name_clone = qpu_name.clone();
                     info!("call proxy server [{}]", qpu_name_clone);
                     thread::spawn(move || {
                         let rt = tokio::runtime::Builder::new_multi_thread()
-                                .enable_all()
-                                .build()
-                                .unwrap();
-                                rt.block_on(async move {
-                                    if let Err(e) = start_reverse_proxy(cfg_clone).await {
-                                        eprintln!("proxy[{}] error: {:?}", qpu_name_clone, e);
-                                    }
-                                });
+                            .enable_all()
+                            .build()
+                            .unwrap();
+                            rt.block_on(async move {
+                                if let Err(e) = start_reverse_proxy(cfg_clone).await {
+                                    eprintln!("proxy[{}] error: {:?}", qpu_name_clone, e);
+                                }
+                            });
                         });
                 }
                 // If user specifies access details in environment variables,
@@ -259,10 +262,14 @@ unsafe impl Plugin for SpankQrmi {
                     }
                 }
 
+                let restrict = proxy_cfg_opt.is_some();
+
                 // Next, set environment variables specified in config file.
                 for (key, value) in &qrmi.environment {
                     // set to job's envronment - overrides == false
-                    if DENY_KEYS.iter().any(|k| key == *k) { continue; }
+                    if restrict && DENY_KEYS.iter().any(|k| key == *k) { 
+                        continue; 
+                    }
                     if spank.setenv(format!("{qpu_name}_{key}"), value, false).is_ok() {
                         // set to the current process for subsequent QRMI.acquire() call
                         env::set_var(format!("{qpu_name}_{key}"), value);
@@ -389,7 +396,7 @@ unsafe impl Plugin for SpankQrmi {
     }
 }
 
-fn build_proxy_runtime_config(qrmi: &QRMIResource, name: &str) -> Option<ProxyRuntimeConfig> {
+fn build_proxy_runtime_config(qrmi: &QRMIResource) -> Option<ProxyRuntimeConfig> {
     let env = &qrmi.environment;
 
     let enabled = env

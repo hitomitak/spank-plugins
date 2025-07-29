@@ -54,11 +54,10 @@ pub struct ProxyRuntimeConfig {
 }
 
 pub async fn start_reverse_proxy(cfg: ProxyRuntimeConfig) -> Result<(), Box<dyn std::error::Error>> {
-    info!("input start reverse Proxy");
-    info!("proxy: file open");
+    info!("Proxy: start reverse Proxy");
 
     let token_url = format!("{}/identity/token", cfg.iam_endpoint);
-    info!("proxy : token url {}", token_url);
+    info!("Proxy : token url {}", token_url);
 
     let dest_url = Url::parse(&cfg.proxy_pass)?;
     let port: u16 = if dest_url.scheme() == "https" {
@@ -67,9 +66,8 @@ pub async fn start_reverse_proxy(cfg: ProxyRuntimeConfig) -> Result<(), Box<dyn 
         dest_url.port_or_known_default().unwrap_or(80)
     };
     let host_port = format!("{}:{}", dest_url.host_str().unwrap_or(""), port);
-    info!("proxy : dst url {}", dest_url);
+    info!("Proxy : dest url {}", dest_url);
 
-    info!("proxy: call ProxyState");
     let state = ProxyState {
         client: hyper_util::client::legacy::Client::<(), ()>::builder(TokioExecutor::new())
             .build(HttpsConnector::new()),
@@ -82,9 +80,7 @@ pub async fn start_reverse_proxy(cfg: ProxyRuntimeConfig) -> Result<(), Box<dyn 
         host: host_port,
     };
 
-    info!("proxy: create Router");
-
-    let mut router = if cfg.paths.is_empty() {
+    let router = if cfg.paths.is_empty() {
         Router::new().route("/*path", any(handler))
     } else {
         let mut r = Router::new();
@@ -95,7 +91,6 @@ pub async fn start_reverse_proxy(cfg: ProxyRuntimeConfig) -> Result<(), Box<dyn 
     }.with_state(state);
 
     let bind = format!("{}:{}", cfg.bind_host, cfg.bind_port);
-    info!("proxy: create bind");
     let listener = tokio::net::TcpListener::bind(&bind).await?;
     axum::serve(listener, router).await?;
     Ok(())
@@ -113,14 +108,12 @@ async fn handler(
         .unwrap_or(path);
 
     let uri = format!("{}{}", state.proxy_pass, path_query);
-    info!("proxy : call handler url {}", uri);
-
     let mut token_manager = state.token_manager.lock().await;
 
     let token = match token_manager.get_token().await {
         Ok(val) => val,
         Err(err) => {
-            info!("proxy : Failed to get access token: {:#?}", err);
+            info!("Proxy : Failed to get access token: {:#?}", err);
             return Err(StatusCode::BAD_GATEWAY);
         }
     };
@@ -137,11 +130,10 @@ async fn handler(
         HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
     );
 
-    info!("proxy : Request client");
     match state.client.request(req).await {
         Ok(v) => Ok(v.into_response()),
         Err(err) => {
-            info!("proxy : Request failed: {:#?}", err);
+            info!("Proxy : Request failed: {:#?}", err);
             Err(StatusCode::BAD_REQUEST)
         }
     }
