@@ -24,7 +24,7 @@ from qiskit_pasqal_provider.providers.pulse_utils import (
     get_register_from_circuit,
 )
 
-from qiskit_qrmi import Payload, QuantumResource, TaskStatus
+from qrmi import Payload, QuantumResource, TaskStatus
 
 
 @dataclass

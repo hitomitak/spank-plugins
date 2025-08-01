@@ -53,10 +53,10 @@ maturin develop --release
 Once you successfully build and install, `qiskit-qrmi` package is ready to use.
 ```shell-session
 $ pip list
-qiskit-qrmi                   0.5.2       /Users/devuser/git/spank-plugins/qrmi
+qrmi                   0.5.2       /Users/devuser/git/spank-plugins/qrmi
 
-$ pip show qiskit-qrmi
-Name: qiskit-qrmi
+$ pip show qrmi
+Name: qrmi
 Version: 0.5.2
 Summary: Quantum Resource Management Interface(QRMI)
 Home-page: 
@@ -66,7 +66,7 @@ License: Apache-2.0
 Location: /shared/pyenv/lib64/python3.12/site-packages
 Editable project location: /shared/spank-plugins/qrmi
 Requires: 
-Required-by: qiskit-qrmi-primitives
+Required-by: qrmi-primitives
 ```
 
 ### Create a wheel for distribution
@@ -96,15 +96,18 @@ Wheel is created under `./target/wheels` directory. You can distribute and insta
 
 ```shell-session
 source ~/py312_qrmi_venv/bin/activate
-pip install /shared/spank-plugins/qrmi/target/wheels/qiskit_qrmi-0.5.2-cp312-abi3-manylinux_2_34_aarch64.whl
+pip install /shared/spank-plugins/qrmi/target/wheels/qrmi-0.5.2-cp312-abi3-manylinux_2_34_aarch64.whl
 ```
 
-## How to build task_runner
+## How to build task_runner for Rust version
 ```shell-session
 . ~/.cargo/env
 cargo build -p task_runner 
 ```
 
+## How to run task_runner for Python version
+`task_runner` for Python version is already included in qiskit-qrmi package. User can use task_runner command after installing qiskit-qrmi. 
+For detailed instructions on how to use it, please refer to this [README](./bin/task_runner/README.md).
 
 ## How to generate stub file for python code
 ```shell-session

@@ -19,7 +19,7 @@ import json
 from qiskit.transpiler.target import Target
 from qiskit_ibm_runtime.utils.backend_converter import convert_to_target
 from qiskit_ibm_runtime.models import BackendProperties, BackendConfiguration
-from qiskit_qrmi import QuantumResource
+from qrmi import QuantumResource
 
 
 def get_target(qrmi: QuantumResource) -> Target:

@@ -1,2 +1,2 @@
 pulser>=1.5.3
-qiskit_qrmi
+qrmi

@@ -10,14 +10,14 @@
 # copyright notice, and modified files need to carry a notice indicating
 # that they have been altered from the originals.
 
-"""SamplerV2 Primitive implementation with IBM QRMI"""
+"""EstimatorV2 Primitive implementation with IBM QRMI"""
 from typing import Union
-from qiskit_qrmi import QuantumResource
-from qiskit_qrmi.primitives import QRMIBaseSamplerV2
+from qrmi import QuantumResource
+from qrmi.primitives import QRMIBaseEstimatorV2
 
 
-class SamplerV2(QRMIBaseSamplerV2):
-    """SamplerV2 for QRMI"""
+class EstimatorV2(QRMIBaseEstimatorV2):
+    """EstimatorV2 for QRMI"""
 
     def __init__(
         self,

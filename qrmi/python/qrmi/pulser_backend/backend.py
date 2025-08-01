@@ -28,7 +28,7 @@ from pulser.backend.remote import (
 from pulser.backend.results import Results
 from pulser.devices import Device
 
-from qiskit_qrmi import Payload, QuantumResource, TaskStatus  # type: ignore
+from qrmi import Payload, QuantumResource, TaskStatus  # type: ignore
 
 logger = logging.getLogger(__name__)
 

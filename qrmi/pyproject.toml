@@ -50,17 +50,21 @@ Changelog = "https://github.com/qiskit/qrmi/blob/master/CHANGELOG.md"
 
 [tool.maturin]
 python-source = "python"
-module-name   = "qiskit_qrmi._core" 
+module-name   = "qrmi._core" 
 features = ["pyo3/extension-module", "pyo3/abi3", "qrmi/pyo3"]
 python-packages = [
-    "qiskit_qrmi",
-    "qiskit_qrmi.pulser_backend",
-    "qiskit_qrmi.primitives",
-    "qiskit_qrmi.primitives.ibm",
-    "qiskit_qrmi.primitives.pasqal",
+    "qrmi",
+    "qrmi.pulser_backend",
+    "qrmi.primitives",
+    "qrmi.primitives.ibm",
+    "qrmi.primitives.pasqal",
+    "qrmi.tools.task_runner",
 ]
 include = [
-  "python/qiskit_qrmi/py.typed",
-  "python/qiskit_qrmi/*.pyi",      
+  "python/qrmi/py.typed",
+  "python/qrmi/*.pyi",      
 ]
+
+[project.scripts]
+task_runner = "qrmi.tools.task_runner.main:run"
 

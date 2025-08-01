@@ -17,7 +17,7 @@
 import argparse
 import time
 
-from qiskit_qrmi import Payload, QuantumResource, ResourceType, TaskStatus
+from qrmi import Payload, QuantumResource, ResourceType, TaskStatus
 
 parser = argparse.ArgumentParser(description="An example of Pasqal Cloud QRMI")
 parser.add_argument(
