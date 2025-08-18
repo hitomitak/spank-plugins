@@ -46,7 +46,21 @@ popd
 #### 4. Applying a patch to slurm-docker-cluster
 
 ```bash
-patch -p1 < ./shared/spank-plugins/demo/qrun/slurm-docker-cluster/file.patch
+patch -p1 < ./shared/spank-plugins/demo/qrmi/slurm-docker-cluster/file.patch
+```
+
+Rocky Linux 9 is used as default. If you want to another  operating system, apply additional patch.
+
+##### CentOS Stream 9
+
+```bash
+patch -p1 < ./shared/spank-plugins/demo/qrmi/slurm-docker-cluster/centos9.patch
+```
+
+##### CentOS Stream 10
+
+```bash
+patch -p1 < ./shared/spank-plugins/demo/qrmi/slurm-docker-cluster/centos10.patch
 ```
 
 #### 5. Building containers
@@ -66,6 +80,24 @@ mkdir minio
 ```bash
 docker compose up -d
 ```
+
+> [!NOTE]
+> Ensure that the following seven containers are running on the PC.
+>
+> - daapi ([Direct Access API Simulator](./daa_sim/README.md) node)
+> - c2 (Compute Node #2)
+> - c1 (Compute Node #1)
+> - slurmctld (Central Management Node)
+> - slurmdbd (Slurm DB Node)
+> - slurm-docker-cluster-minio-1 (S3 Bucket Node, used by Direct Access)
+> - mysql (Database node)
+
+Slurm Cluster is now set up as shown.
+
+<p align="center">
+  <img src="./docs/images/slurm-docker-cluster.png" width="640">
+</p>
+
 
 #### 8. Creating a S3 bucket for testing
 
@@ -121,30 +153,6 @@ bash-5.1# mc mb local/slurm-qrun
 bash-5.1# exit
 ```
 
-#### 9. Starting Slurm Cluster
-
-```bash
-docker compose up -d
-```
-
-> [!NOTE]
-> Ensure that the following seven containers are running on the PC.
->
-> - daapi ([Direct Access API Simulator](./daa_sim/README.md) node)
-> - c2 (Compute Node #2)
-> - c1 (Compute Node #1)
-> - slurmctld (Central Management Node)
-> - slurmdbd (Slurm DB Node)
-> - slurm-docker-cluster-minio-1 (S3 Bucket Node, used by Direct Access)
-> - mysql (Database node)
-
-Slurm Cluster is now set up as shown.
-
-<p align="center">
-  <img src="./docs/images/slurm-docker-cluster.png" width="640">
-</p>
-
-
 ### Building and installing our SPANK Plugins
 
 
@@ -154,51 +162,70 @@ Slurm Cluster is now set up as shown.
 > - building code on `slurmctld` node. Other nodes are also acceptable.
 
 
-1. Building [QRUN](./commands/qrun/README.md)
+1. Login to slurmctld container
+```bash
+% docker exec -it slurmctld bash
+```
+
+2. Creating python virtual env under shared volume
+
+```bash
+[root@slurmctld /]# python3.12 -m venv /shared/pyenv
+[root@slurmctld /]# pip install --upgrade pip
+```
+
+3. Building [QRMI](./qrmi/README.md)
 
 ```bash
 % docker exec -it slurmctld bash
 
 [root@slurmctld /]# source ~/.cargo/env
-[root@slurmctld /]# cd /shared/spank-plugins/commands/qrun
-[root@slurmctld /]# cargo build --release
+[root@slurmctld /]# source /shared/pyenv/bin/activate
+[root@slurmctld /]# cd /shared/spank-plugins/qrmi
+[root@slurmctld /]# pip install -r requirements-dev.txt
+[root@slurmctld /]# maturin develop --release
 ```
 
-2. Building SPANK Plugin - [skeleton](./plugins/skeleton/README.md)
+4. Building [Primitives](./primitives/python/README.md)
 
 ```bash
-[root@slurmctld /]# cd /shared/spank-plugins/plugins/skeleton
-[root@slurmctld /]# mkdir build
-[root@slurmctld /]# pushd build
-[root@slurmctld /]# cmake ..
-[root@slurmctld /]# make
-[root@slurmctld /]# popd
+[root@slurmctld /]# cd /shared/spank-plugins/primitives/python/qiskit_qrmi_primitives
+[root@slurmctld /]# pip install .
+[root@slurmctld /]# cd examples/ibm
+[root@slurmctld /]# pip install -r requirements.txt
+[root@slurmctld /]# cd /shared/spank-plugins/primitives/python/pulser_qrmi_backend
+[root@slurmctld /]# pip install .
+[root@slurmctld /]# cd examples/pasqal
+[root@slurmctld /]# pip install -r requirements.txt
 ```
 
-3. Building SPANK Plugin - [spank_ibm_qrun](./plugins/spank_ibm_qrun/README.md)
+5. Building [SPANK Plugin](./plugins)
 
 ```bash
-[root@slurmctld /]# cd /shared/spank-plugins/plugins/spank_ibm_qrun
+[root@slurmctld /]# cd /shared/spank-plugins/plugins/spank_qrmi
 [root@slurmctld /]# mkdir build
-[root@slurmctld /]# pushd build
+[root@slurmctld /]# cd build
 [root@slurmctld /]# cmake ..
 [root@slurmctld /]# make
-[root@slurmctld /]# popd
 ```
 
-4. Installing SPANK Plugins
+6. Creating qrmi_config.json
 
-> [!NOTE]
-> The plugstack.conf file and the plugin library must be available on the node where the user executes the `sbatch` command and on the compute node where the QRUN command is executed.
+Refer [this example](./plugins/spank_qrmi/qrmi_config.json.example) and describe your environment. Then, create a file under /etc/slurm or other where slurm daemons can access.
+
+7. Installing SPANK Plugins
 
 Create `/etc/slurm/plugstack.conf` if not exists and add the following lines:
-
 ```bash
-optional /shared/spank-plugins/plugins/skeleton/build/spank_skeleton.so
-optional /shared/spank-plugins/plugins/spank_ibm_qrun/build/spank_ibm_qrun.so
+optional /shared/spank-plugins/plugins/spank_qrmi/build/spank_qrmi.so /etc/slurm/qrmi_config.json
 ```
 
-5. Checking SPANK Plugins installation
+Above example assumes you create qrmi_config.json under /etc/slurm directory.
+
+> [!NOTE]
+> When you setup your own slurm cluster, `plugstack.conf`, `qrmi_config.json` and above plugin libraries need to be installed on the machines that execute slurmd (compute nodes) as well as on the machines that execute job allocation utilities such as salloc, sbatch, etc (login nodes). Refer [SPANK documentation](https://slurm.schedmd.com/spank.html#SECTION_CONFIGURATION) for more details.
+
+8. Checking SPANK Plugins installation
 
 If you complete above step, you must see additional options of `sbatch` like below.
 
@@ -206,47 +233,7 @@ If you complete above step, you must see additional options of `sbatch` like bel
 [root@slurmctld /]# sbatch --help
 
 Options provided by plugins:
-      --skeleton-option=value Option for spank-skeleton.
-      --q-backend=name        Name of Qiskit backend.
-      --q-primitive=type      Qiskit primitive type(sampler or estimator).
-
-```
-
-6. Install QRUN Command
-
-Login to compute nodes (`c1` and `c2` in above slurm docker cluster example).
-
-```bash
-% docker exec -it c1 bash
-[root@c1 /]# ln -s /shared/spank-plugins/commands/qrun/target/release/qrun /usr/local/bin/
-[root@c1 /]# exit
-% docker exec -it c2 bash
-[root@c2 /]# ln -s /shared/spank-plugins/commands/qrun/target/release/qrun /usr/local/bin/
-[root@c2 /]# exit
-```
-
-7. Checking QRUN command
-
-Login to compute nodes (`c1` and `c2 in above slurm docker cluster example).
-
-```bash
-[root@c1 /]# which qrun
-/usr/local/bin/qrun
-
-[root@c1 /]# qrun --help
-QRUN - Command to run Qiskit Primitive jobs
-
-Usage: qrun [OPTIONS] <INPUT>
-
-Arguments:
-  <INPUT>  Qiskit Primitive Unified Bloc(PUB)s file
-
-Options:
-  -r, --results <RESULTS>            Result output file
-      --http-timeout <HTTP_TIMEOUT>  HTTP request timeout in seconds [default: 60]
-  -h, --help                         Print help
-  -V, --version                      Print version
-[root@c1 /]#
+      --qpu=names             Comma separated list of QPU resources to use.
 ```
 
 ### Running examples of primitive job in Slurm Cluster
@@ -257,70 +244,102 @@ Options:
 % docker exec -it slurmctld bash
 ```
 
-2. Going to demo directory
+2. Running Sampler job
 
+run_sampler.sh
 ```bash
-[root@slurmctld /]# cd /shared/spank-plugins/demo/jobs
-```
+#!/bin/bash
 
-3. Running Sampler job
+#SBATCH --job-name=sampler_job
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --qpu=test_heron,test_eagle <<<< CUSTOMIZE THIS LINE!!! TO BE CONSISTENT WITH qrmi_config.json
+
+# Your script goes here
+source /shared/pyenv/bin/activate
+srun python /shared/spank-plugins/primitives/python/qiskit_qrmi_primitives/examples/ibm/sampler.py
+```
 
 ```bash
 [root@slurmctld /]# sbatch run_sampler.sh
 ```
+ 
+3. Running Estimator job
 
-4. Running Estimator job
+run_estimator.sh
+```bash
+#!/bin/bash
+
+#SBATCH --job-name=estimator_job
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --qpu=test_heron,test_eagle <<<< CUSTOMIZE THIS LINE!!! TO BE CONSISTENT WITH qrmi_config.json
+
+# Your script goes here
+source /shared/pyenv/bin/activate
+srun python /shared/spank-plugins/primitives/python/qiskit_qrmi_primitives/examples/ibm/estimator.py
+```
 
 ```bash
 [root@slurmctld /]# sbatch run_estimator.sh
 ```
  
+
+4. Running Pasqal job
+
+run_pulser_backend.sh
+```bash
+#!/bin/bash
+
+#SBATCH --job-name=pasqal_job
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --qpu=FRESNEL <<<< CUSTOMIZE THIS LINE!!! TO BE CONSISTENT WITH qrmi_config.json
+
+# Your script goes here
+source /shared/pyenv/bin/activate
+srun python /shared/spank-plugins/primitives/python/pulser_qrmi_backend/examples/pasqal/pulser_backend.py
+```
+
+```bash
+[root@slurmctld /]# sbatch run_pulser_backend.sh
+```
+
+
 5. Checking primitive results
 
-Once above scripts are completed, you must find `/data/sampler_output.json` and `/data/estimator_output.json` as described in above scripts.
+Once above scripts are completed, you must find `slurm-{job_id}.out` in the current directory.
 
 For example,
 ```bash
-[root@slurmctld /]# cat /data/estimator_output.json
-{
-  "metadata": {
-    "version": 2
-  },
-  "results": [
-    {
-      "data": {
-        "evs": [
-          0.004016745250604636,
-          0.0,
-          0.0025120469911992793,
-          0.0,
-          0.9937272990440552,
-          0.9919255461264646
-        ],
-        "stds": [
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0
-        ]
-      },
-      "metadata": {
-        "circuit_metadata": {},
-        "simulator_metadata": {
-          "max_gpu_memory_mb": 0,
-          "max_memory_mb": 23995,
-          "omp_enabled": true,
-          "parallel_experiments": 1,
-          "time_taken_execute": 0.006059958,
-          "time_taken_parameter_binding": 0.000015292
-        },
-        "target_precision": 0.0
-      }
-    }
-  ]
-}
+[root@slurmctld /]# cat slurm-81.out
+{'backend_name': 'test_eagle'}
+>>> Observable: ['IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...',
+ 'IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII...', ...]
+>>> Circuit ops (ISA): OrderedDict([('rz', 2724), ('sx', 1185), ('ecr', 576), ('x', 288)])
+>>> Job ID: 0b1965a6-7473-4efc-aea2-6e2f1c843e5b
+>>> Job Status: JobStatus.RUNNING
+>>> PrimitiveResult([PubResult(data=DataBin(evs=np.ndarray(<shape=(), dtype=float64>), stds=np.ndarray(<shape=(), dtype=float64>), ensemble_standard_error=np.ndarray(<shape=(), dtype=float64>)), metadata={'shots': 4096, 'target_precision': 0.015625, 'circuit_metadata': {}, 'resilience': {}, 'num_randomizations': 32})], metadata={'dynamical_decoupling': {'enable': False, 'sequence_type': 'XX', 'extra_slack_distribution': 'middle', 'scheduling_method': 'alap'}, 'twirling': {'enable_gates': False, 'enable_measure': True, 'num_randomizations': 'auto', 'shots_per_randomization': 'auto', 'interleave_randomizations': True, 'strategy': 'active-accum'}, 'resilience': {'measure_mitigation': True, 'zne_mitigation': False, 'pec_mitigation': False}, 'version': 2})
+  > Expectation value: 0.16554467382152394
+  > Metadata: {'shots': 4096, 'target_precision': 0.015625, 'circuit_metadata': {}, 'resilience': {}, 'num_randomizations': 32}
 ```
+
+### Running serialized jobs using the qrmi_task_runner Slurm Cluster
+
+It is possible to run JSON-serialized jobs directly using a commandline utility called qrmi_task runner.
+See [the docs](./commands/task_runner/README.md) for that tool for details.
 
 ## END OF DOCUMENT
